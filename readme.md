@@ -12,7 +12,7 @@ CC字幕自動抓取
 # 使用方法
 ```
 import Linetv # 匯入模組
-Linetv.Linetv('輸入在linetv看到的ID') # 非必要
-Linetv.DL('輸入在LineTV看到的ID', '輸入集數')
+Linetv.Parser('輸入在Line TV看到的ID') # 非必要
+Linetv.DL('輸入在Line TV看到的ID', '輸入集數')
 ```
 

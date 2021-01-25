@@ -6,7 +6,7 @@ import requests
 from lxml import etree
 
 
-class Linetv():
+class Parser():
     def __init__(self, dramaid):
         self.session = requests.Session()
         self.session.headers.update({
@@ -28,7 +28,7 @@ class Linetv():
 
 
 class DL():
-    def __init__(self, dramaid, ep):
+    def __init__(self, dramaid: str, ep: str):
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
@@ -40,15 +40,29 @@ class DL():
         self.keyType = ''
         self.m3u8 = ''
         self.subtitle = ''
+        self.check_ffmpeg()
         self.get_m3u8()
         self.get_m3u8_key()
         self.dl_video()
+        print('下載完成')
         # shutil.rmtree('.')
+
+    def check_ffmpeg(self):
+        try:
+            subprocess.Popen(
+                'ffmpeg -h', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        except FileNotFoundError:
+            print('本項目需要ffmpeg，請手動安裝ffmpeg')
+            raise
 
     def get_m3u8(self):
         req = self.session.get(
             f'https://www.linetv.tw/api/part/{self.dramaid}/eps/{self.ep}/part')
-        parser = req.json()['epsInfo']['source'][0]['links'][0]
+        try:
+            parser = req.json()['epsInfo']['source'][0]['links'][0]
+        except KeyError:
+            print(req.json()['message'])
+            return
         self.dramaname = req.json()['dramaInfo']['name']
         self.keyId = parser['keyId']
         self.keyType = parser['keyType']
@@ -83,8 +97,9 @@ class DL():
         # with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.ts'), 'wb') as f:
         #     f.write(video.content)
         print(f'正在下載：{self.dramaname} 第{self.ep}集')
+        output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
         subprocess.Popen(
-            f'ffmpeg -allowed_extensions ALL -protocol_whitelist file,http,https,tcp,tls,crypto -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -c copy .\\{self.dramaname}-E{self.ep}.mp4', shell=True, stderr=subprocess.PIPE).communicate()
+            f'ffmpeg -allowed_extensions ALL -protocol_whitelist file,http,https,tcp,tls,crypto -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
         if self.subtitle:
             sub = self.session.get(self.subtitle)
             with open(f'{self.dramaname}-E{self.ep}.vtt', 'w') as f:
