@@ -74,8 +74,8 @@ class DL():
         data = {'keyType': self.keyType, 'keyId': self.keyId,
                 'dramaId': int(self.dramaid), 'eps': int(self.ep)}
         req = self.session.post(
-            'https://www.linetv.tw/api/part/dinosaurKeeper', data=data).json()
-        token = req['token']
+            'https://www.linetv.tw/api/part/dinosaurKeeper', data=data)
+        token = req.json()['token']
         key = self.session.get(
             'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
         with open(os.path.join('.', 'm3u8.key'), 'wb') as f:
@@ -99,11 +99,13 @@ class DL():
         print(f'正在下載：{self.dramaname} 第{self.ep}集')
         output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
         subprocess.Popen(
-            f'ffmpeg -allowed_extensions ALL -protocol_whitelist file,http,https,tcp,tls,crypto -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
+            f'ffmpeg -allowed_extensions ALL -protocol_whitelist http,https,tls,rtp,tcp,udp,crypto,httpproxy,file -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
+        if not os.path.exists(output):
+            print('下載失敗')
+            return
         if self.subtitle:
             sub = self.session.get(self.subtitle)
             with open(f'{self.dramaname}-E{self.ep}.vtt', 'w') as f:
                 f.write(sub.text)
         os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.m3u8')
         os.remove('m3u8.key')
-
