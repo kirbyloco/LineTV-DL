@@ -105,7 +105,8 @@ class DL():
             return
         if self.subtitle:
             sub = self.session.get(self.subtitle)
-            with open(f'{self.dramaname}-E{self.ep}.vtt', 'w') as f:
+            print('正在下載字幕')
+            with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                 f.write(sub.text)
         os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.m3u8')
         os.remove('m3u8.key')
