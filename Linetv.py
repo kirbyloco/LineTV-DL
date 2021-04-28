@@ -5,13 +5,13 @@ import subprocess
 import requests
 from lxml import etree
 
+UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
+session = requests.Session()
+session.headers.update({'User-Agent': UA})
+
 
 class Parser():
-    def __init__(self, dramaid):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
-        })
+    def __init__(self, dramaid: str):
         self.dramaid = str(dramaid)
         self.eps = []
         self.get_eps()
@@ -21,7 +21,7 @@ class Parser():
             self.failed = True
 
     def get_eps(self):
-        req = self.session.get(f'https://www.linetv.tw/drama/{self.dramaid}')
+        req = session.get(f'https://www.linetv.tw/drama/{self.dramaid}')
         parser = etree.HTML(req.text)
         for _ in parser.xpath('//li/a/h3'):
             self.eps.append(re.findall(r'(\d+)', _.text)[0])
@@ -29,10 +29,6 @@ class Parser():
 
 class DL():
     def __init__(self, dramaid: str, ep: str):
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
-        })
         self.dramaid = str(dramaid)
         self.dramaname = ''
         self.ep = str(ep)
@@ -56,7 +52,7 @@ class DL():
             raise
 
     def get_m3u8(self):
-        req = self.session.get(
+        req = session.get(
             f'https://www.linetv.tw/api/part/{self.dramaid}/eps/{self.ep}/part')
         try:
             parser = req.json()['epsInfo']['source'][0]['links'][0]
@@ -73,10 +69,10 @@ class DL():
     def get_m3u8_key(self):
         data = {'keyType': self.keyType, 'keyId': self.keyId,
                 'dramaId': int(self.dramaid), 'eps': int(self.ep)}
-        req = self.session.post(
+        req = session.post(
             'https://www.linetv.tw/api/part/dinosaurKeeper', data=data)
         token = req.json()['token']
-        key = self.session.get(
+        key = session.get(
             'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
         with open(os.path.join('.', 'm3u8.key'), 'wb') as f:
             f.write(key.content)
@@ -84,7 +80,7 @@ class DL():
     def dl_video(self):
         urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
         m3u8url = f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.m3u8'
-        m3u8 = self.session.get(m3u8url)
+        m3u8 = session.get(m3u8url)
         m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
                       'm3u8.key', m3u8.text)
         m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
@@ -93,7 +89,7 @@ class DL():
             f.write(m3u8)
         # 保留程式碼
         # videourl = f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts'
-        # video = self.session.get(videourl)
+        # video = session.get(videourl)
         # with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.ts'), 'wb') as f:
         #     f.write(video.content)
         print(f'正在下載：{self.dramaname} 第{self.ep}集')
@@ -104,7 +100,7 @@ class DL():
             print('下載失敗')
             return
         if self.subtitle:
-            sub = self.session.get(self.subtitle)
+            sub = session.get(self.subtitle)
             print('正在下載字幕')
             with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                 f.write(sub.text)
