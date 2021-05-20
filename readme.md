@@ -15,6 +15,7 @@ CC字幕自動抓取
 ```
 import Linetv # 匯入模組
 Linetv.Parser('輸入在Line TV看到的ID') # 非必要
-Linetv.DL('輸入在Line TV看到的ID', '輸入集數')
+Linetv.DL.Drama('輸入在Line TV看到的ID', '輸入集數')
+Linetv.DL.Behind('輸入在Parser裡面看到的網址')
 ```
 
