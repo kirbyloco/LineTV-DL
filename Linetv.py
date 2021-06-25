@@ -6,9 +6,14 @@ import subprocess
 import requests
 from lxml import etree
 
+
+with open('config.json') as f:
+    config = json.load(f)
+
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
 session = requests.Session()
-session.headers.update({'User-Agent': UA})
+session.headers.update(
+    {'User-Agent': UA, 'authorization': config['access_token']})
 
 
 class Parser():

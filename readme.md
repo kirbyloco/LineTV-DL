@@ -12,6 +12,14 @@
 CC字幕自動抓取
 
 # 使用方法
+## 登入帳號
+```
+請先將config.template.json重新命名為config.json
+1. 在網頁版登入好帳號後
+2. 從cookies提取access_token
+3. 複製到config.json裡
+```
+![]('https://raw.githubusercontent.com/kirbyloco/LineTV-DL/master/img/cookies.png')
 ## 匯入模組
 ```
 import Linetv # 匯入模組
