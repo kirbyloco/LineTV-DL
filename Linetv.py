@@ -10,10 +10,12 @@ from lxml import etree
 with open('config.json') as f:
     config = json.load(f)
 
-UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.75 Safari/537.36'
+UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
 session = requests.Session()
-session.headers.update(
-    {'User-Agent': UA, 'authorization': config['access_token']})
+session.headers.update({'User-Agent': UA})
+
+if config['access_token']:
+    session.headers.update({'authorization': config['access_token']})
 
 
 class Parser():
@@ -90,9 +92,9 @@ class DL:
             data = {'keyType': self.keyType, 'keyId': self.keyId,
                     'dramaId': int(self.dramaid), 'eps': int(self.ep)}
             req = session.post(
-                'https://www.linetv.tw/api/part/dinosaurKeeper', data=data)
+                'https://www.linetv.tw/api/part/dinosaurKeeper', json=data)
             token = req.json()['token']
-            key = session.get(
+            key = requests.get(
                 'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
             with open(os.path.join('.', 'm3u8.key'), 'wb') as f:
                 f.write(key.content)
