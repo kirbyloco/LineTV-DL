@@ -6,9 +6,11 @@ import subprocess
 import requests
 from lxml import etree
 
-
-with open('config.json') as f:
-    config = json.load(f)
+try:
+    with open('config.json') as f:
+        config = json.load(f)
+except:
+    print('找不到config.json，將採用未登入模式下載')
 
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
 session = requests.Session()
@@ -50,14 +52,15 @@ class Parser():
 
 class DL:
     class Drama():
-        def __init__(self, dramaid: str, ep: str):
+        def __init__(self, dramaid: str, ep: str, subtitle=False):
             self.dramaid = str(dramaid)
-            self.dramaname = ''
+            self.subtitle = subtitle
             self.ep = str(ep)
+            self.dramaname = ''
             self.keyId = ''
             self.keyType = ''
             self.m3u8 = ''
-            self.subtitle = ''
+            self.sub_url = ''
             self.check_ffmpeg()
             self.get_m3u8()
             self.get_m3u8_key()
@@ -86,7 +89,7 @@ class DL:
             self.keyType = parser['keyType']
             self.m3u8 = parser['link']
             if 'subtitle' in parser:
-                self.subtitle = parser['subtitle']
+                self.sub_url = parser['subtitle']
 
         def get_m3u8_key(self):
             data = {'keyType': self.keyType, 'keyId': self.keyId,
@@ -119,8 +122,11 @@ class DL:
                 print('下載失敗')
                 return
 
-            if self.subtitle:
-                sub = session.get(self.subtitle)
+            if self.sub_url and self.subtitle:
+                sub = session.get(self.sub_url)
+                if sub.status_code != 200:
+                    sub = session.get(
+                        f'{urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
                 print('正在下載字幕')
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                     f.write(sub.text)
@@ -141,3 +147,16 @@ class DL:
                 print('下載失敗')
             else:
                 print('下載成功')
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dramaid', help='輸入DramaId')
+    parser.add_argument('--ep', help='輸入集數')
+    parser.add_argument('--sub', help='若有字幕自動下載')
+    args = parser.parse_args()
+
+    if args.dramaid and args.ep:
+        DL.Drama(args.dramaid, args.ep)
