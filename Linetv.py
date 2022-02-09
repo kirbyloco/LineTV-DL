@@ -6,18 +6,17 @@ import subprocess
 import requests
 from lxml import etree
 
-try:
-    with open('config.json') as f:
-        config = json.load(f)
-except:
-    print('找不到config.json，將採用未登入模式下載')
-
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
 session = requests.Session()
 session.headers.update({'User-Agent': UA})
 
-if config['access_token']:
-    session.headers.update({'authorization': config['access_token']})
+try:
+    with open('config.json') as f:
+        config = json.load(f)
+    if config['access_token']:
+        session.headers.update({'authorization': config['access_token']})
+except:
+    print('找不到config.json，將採用未登入模式下載')
 
 
 class Parser():
@@ -116,7 +115,7 @@ class DL:
             print(f'正在下載：{self.dramaname} 第{self.ep}集')
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
             subprocess.Popen(
-                f'ffmpeg -allowed_extensions ALL -protocol_whitelist http,https,tls,rtp,tcp,udp,crypto,httpproxy,file -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
+                f'ffmpeg -allowed_extensions ALL -protocol_whitelist http,https,tls,rtp,tcp,udp,crypto,httpproxy,file -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -movflags +faststart -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
 
             if not os.path.exists(output):
                 print('下載失敗')
