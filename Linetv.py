@@ -51,10 +51,11 @@ class Parser():
 
 class DL:
     class Drama():
-        def __init__(self, dramaid: str, ep: str, subtitle=False):
-            self.dramaid = str(dramaid)
+        def __init__(self, dramaid: str, ep: str, lng: str, subtitle=False):
+            self.dramaid = dramaid
             self.subtitle = subtitle
-            self.ep = str(ep)
+            self.ep = ep
+            self.lng = lng
             self.dramaname = ''
             self.keyId = ''
             self.keyType = ''
@@ -113,8 +114,13 @@ class DL:
 
             print(f'正在下載：{self.dramaname} 第{self.ep}集')
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
+            ffmpeg_cmd = ['ffmpeg', '-allowed_extensions', 'ALL',
+                          '-protocol_whitelist', 'http,https,tls,rtp,tcp,udp,crypto,httpproxy,file', '-y', '-i', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8', '-movflags', '+faststart', '-c', 'copy']
+            if self.lng:
+                ffmpeg_cmd.extend(['-metadata:s:a:0', f'language={self.lng}'])
+            ffmpeg_cmd.extend([output])
             subprocess.Popen(
-                f'ffmpeg -allowed_extensions ALL -protocol_whitelist http,https,tls,rtp,tcp,udp,crypto,httpproxy,file -y -i {self.dramaid}-eps-{self.ep}_1080p.m3u8 -movflags +faststart -c copy \"{output}\"', shell=True, stderr=subprocess.PIPE).communicate()
+                ffmpeg_cmd, shell=True, stderr=subprocess.PIPE).communicate()
 
             if not os.path.exists(output):
                 print('下載失敗')
@@ -156,7 +162,8 @@ if __name__ == '__main__':
     parser.add_argument('--dramaid', help='輸入DramaId')
     parser.add_argument('--ep', help='輸入集數')
     parser.add_argument('--sub', help='若有字幕自動下載')
+    parser.add_argument('--lng', help='輸入音軌語言')
     args = parser.parse_args()
 
     if args.dramaid and args.ep:
-        DL.Drama(args.dramaid, args.ep)
+        DL.Drama(args.dramaid, args.ep, args.lng)
