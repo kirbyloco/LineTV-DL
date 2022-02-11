@@ -31,7 +31,7 @@ class Parser():
     def get_eps(self):
         parser = etree.HTML(self.html.text)
         for _ in parser.xpath('//li/a/h3'):
-            self.eps.append(re.findall(r'(\d+)', _.text)[0])
+            self.eps = re.findall(r'(\d+)', _.text)[0]
 
     def get_behind(self):
         parser = etree.HTML(self.html.text)
@@ -161,9 +161,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dramaid', help='輸入DramaId')
     parser.add_argument('--ep', help='輸入集數')
+    parser.add_argument('--epall', help='一次下載全部集數', action="store_true")
     parser.add_argument('--sub', help='若有字幕自動下載')
     parser.add_argument('--lng', help='輸入音軌語言')
     args = parser.parse_args()
+
+    if args.dramaid and args.epall:
+        for _ep in Parser(args.dramaid).eps:
+            DL.Drama(args.dramaid, _ep, args.lng)
 
     if args.dramaid and args.ep:
         DL.Drama(args.dramaid, args.ep, args.lng)
