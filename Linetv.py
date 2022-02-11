@@ -64,7 +64,6 @@ class DL:
             self.get_m3u8()
             self.get_m3u8_key()
             self.dl_video()
-            print('下載完成')
             # shutil.rmtree('.')
 
         def check_ffmpeg(self):
@@ -120,6 +119,8 @@ class DL:
             if not os.path.exists(output):
                 print('下載失敗')
                 return
+            else:
+                print('下載完成')
 
             if self.sub_url and self.subtitle:
                 sub = session.get(self.sub_url)
