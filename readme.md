@@ -26,14 +26,17 @@ CC字幕自動抓取（可開關）
 ```
 python Linetv.py --dramaid <Dramaid> --ep <集數> --sub
 # 範例
-python Linetv.py --dramaid 12102 --ep 1 --sub
+python Linetv.py --dramaid 12102 --ep 1 --sub ## 下載第一集
+python Linetv.py --dramaid 12102 --epall --sub ## 下載全部集數
 ```
 詳細參數
 |指令|用途|
 |-|-|
 |--dramaid|指定要下載的dramaid|
 |--ep|指定要下載的集數|
+|--epall|一次下載全部集數|
 |--sub|開啟字幕下載|
+|--lng|輸入音軌語言（輸入ISO 639-2標準代碼）|
 
 ## 開發者模式
 ```
