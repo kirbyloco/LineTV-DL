@@ -151,12 +151,12 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dramaid', help='輸入DramaId')
+    parser.add_argument('--dramaid', '-id', help='輸入DramaId')
     parser.add_argument('--ep', help='輸入集數')
     parser.add_argument('--epall', help='一次下載全部集數', action="store_true")
-    parser.add_argument('--sub', help='若有字幕自動下載')
     parser.add_argument('--special', '-sp',
                         help='一次下載全部幕後花絮和精華', action="store_true")
+    parser.add_argument('--sub', help='若有字幕自動下載', action="store_true")
     parser.add_argument('--lng', help='輸入音軌語言')
     args = parser.parse_args()
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     if args.dramaid and args.epall:
         for _ep in Parser(args.dramaid).eps:
-            DL.Drama(args.dramaid, _ep, args.lng)
+            DL.Drama(args.dramaid, _ep, args.lng, args.sub)
 
     if args.dramaid and args.ep:
-        DL.Drama(args.dramaid, args.ep, args.lng)
+        DL.Drama(args.dramaid, args.ep, args.lng, args.sub)
