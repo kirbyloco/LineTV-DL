@@ -38,14 +38,6 @@ class Parser():
         data = json.loads(parser.xpath(
             '//script[@type="application/ld+json"]')[2].text)
         for _trailer in data['trailer']:
-
-    def behind(self):
-        num = 0
-        for _title in self._behind.keys():
-            num += 1
-            print(f'{num} {_title}')
-        return self._behind[list(self._behind.keys())
-                            [int(input('請輸入需要的編號：')) - 1]]
             self.behind[_trailer['name']] = _trailer['contentUrl']
 
 
@@ -141,10 +133,10 @@ class DL:
             os.remove('m3u8.key')
 
     class Behind():
-        def __init__(self, url):
-            print('正在下載...')
+        def __init__(self, url: str, filename: str):
+            print(f'正在下載{filename}')
             video = session.get(url)
-            videoname = url.split('/')[-1]
+            videoname = filename + url.split('/')[-1][-4:]
 
             with open(videoname, 'wb') as f:
                 f.write(video.content)
@@ -163,8 +155,16 @@ if __name__ == '__main__':
     parser.add_argument('--ep', help='輸入集數')
     parser.add_argument('--epall', help='一次下載全部集數', action="store_true")
     parser.add_argument('--sub', help='若有字幕自動下載')
+    parser.add_argument('--special', '-sp',
+                        help='一次下載全部幕後花絮和精華', action="store_true")
     parser.add_argument('--lng', help='輸入音軌語言')
     args = parser.parse_args()
+
+    if args.dramaid and args.special:
+        sps = Parser(args.dramaid).behind
+        print(sps)
+        for sp in sps:
+            DL.Behind(sps[sp], sp)
 
     if args.dramaid and args.epall:
         for _ep in Parser(args.dramaid).eps:
