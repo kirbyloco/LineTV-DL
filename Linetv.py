@@ -22,23 +22,22 @@ except:
 class Parser():
     def __init__(self, dramaid: str):
         self.dramaid = str(dramaid)
-        self.eps = []
-        self._behind = {}
         self.html = session.get(f'https://www.linetv.tw/drama/{self.dramaid}')
         self.get_eps()
         self.get_behind()
 
     def get_eps(self):
+        self.eps = []
         parser = etree.HTML(self.html.text)
         for _ in parser.xpath('//li/a/h3'):
-            self.eps = re.findall(r'(\d+)', _.text)[0]
+            self.eps += re.findall(r'(\d+)', _.text)
 
     def get_behind(self):
+        self.behind = {}
         parser = etree.HTML(self.html.text)
         data = json.loads(parser.xpath(
             '//script[@type="application/ld+json"]')[2].text)
         for _trailer in data['trailer']:
-            self._behind[_trailer['name']] = _trailer['contentUrl']
 
     def behind(self):
         num = 0
@@ -47,6 +46,7 @@ class Parser():
             print(f'{num} {_title}')
         return self._behind[list(self._behind.keys())
                             [int(input('請輸入需要的編號：')) - 1]]
+            self.behind[_trailer['name']] = _trailer['contentUrl']
 
 
 class DL:
