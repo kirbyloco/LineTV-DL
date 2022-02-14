@@ -43,11 +43,12 @@ class Parser():
 
 class DL:
     class Drama():
-        def __init__(self, dramaid: str, ep: str, lng: str, subtitle=False):
+        def __init__(self, dramaid: str, ep: str, lng: str, subtitle=False, no_download=False):
             self.dramaid = dramaid
             self.subtitle = subtitle
             self.ep = ep
             self.lng = lng
+            self.no_download = no_download
             self.dramaname = ''
             self.keyId = ''
             self.keyType = ''
@@ -90,7 +91,7 @@ class DL:
             token = req.json()['token']
             key = requests.get(
                 'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
-            with open(os.path.join('.', 'm3u8.key'), 'wb') as f:
+            with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.key'), 'wb') as f:
                 f.write(key.content)
 
         def dl_video(self):
@@ -98,11 +99,14 @@ class DL:
             m3u8url = f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.m3u8'
             m3u8 = session.get(m3u8url)
             m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
-                          'm3u8.key', m3u8.text)
+                          f'{self.dramaid}-eps-{self.ep}_1080p.key', m3u8.text)
             m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
                           f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
             with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8'), 'w') as f:
                 f.write(m3u8)
+
+            if self.no_download:
+                return
 
             print(f'正在下載：{self.dramaname} 第{self.ep}集')
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
@@ -112,7 +116,7 @@ class DL:
                 ffmpeg_cmd.extend(['-metadata:s:a:0', f'language={self.lng}'])
             ffmpeg_cmd.extend([output])
             subprocess.Popen(
-                ffmpeg_cmd, shell=True, stderr=subprocess.PIPE).communicate()
+                ffmpeg_cmd, shell=False, stderr=subprocess.PIPE).communicate()
 
             if not os.path.exists(output):
                 print('下載失敗')
@@ -130,7 +134,7 @@ class DL:
                     f.write(sub.text)
 
             os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.m3u8')
-            os.remove('m3u8.key')
+            os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.key')
 
     class Behind():
         def __init__(self, url: str, filename: str):
@@ -158,17 +162,18 @@ if __name__ == '__main__':
                         help='一次下載全部幕後花絮和精華', action="store_true")
     parser.add_argument('--sub', help='若有字幕自動下載', action="store_true")
     parser.add_argument('--lng', help='輸入音軌語言')
+    parser.add_argument('--no_download', help='僅下載m3u8和key',
+                        action="store_true")
     args = parser.parse_args()
 
     if args.dramaid and args.special:
         sps = Parser(args.dramaid).behind
-        print(sps)
         for sp in sps:
             DL.Behind(sps[sp], sp)
 
     if args.dramaid and args.epall:
         for _ep in Parser(args.dramaid).eps:
-            DL.Drama(args.dramaid, _ep, args.lng, args.sub)
+            DL.Drama(args.dramaid, _ep, args.lng, args.sub, args.no_download)
 
     if args.dramaid and args.ep:
-        DL.Drama(args.dramaid, args.ep, args.lng, args.sub)
+        DL.Drama(args.dramaid, args.ep, args.lng, args.sub, args.no_download)
