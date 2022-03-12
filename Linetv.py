@@ -176,4 +176,12 @@ if __name__ == '__main__':
             DL.Drama(args.dramaid, _ep, args.lng, args.sub, args.no_download)
 
     if args.dramaid and args.ep:
-        DL.Drama(args.dramaid, args.ep, args.lng, args.sub, args.no_download)
+        if args.ep.find('-') != -1:
+            ids = range(
+                int(args.ep.split('-')[0]), int(args.ep.split('-')[1]) + 1)
+        elif args.ep.find(',') != -1:
+            ids = args.ep.split(',')
+        else:
+            ids = [args.ep]
+        for _ep in ids:
+            DL.Drama(args.dramaid, _ep, args.lng, args.sub, args.no_download)
