@@ -28,6 +28,8 @@ python Linetv.py --dramaid <Dramaid> --ep <集數> --sub
 # 範例
 python Linetv.py --dramaid 12102 --ep 1 --sub ## 下載第一集
 python Linetv.py --dramaid 12102 --epall --sub ## 下載全部集數
+python Linetv.py --dramaid 12102 --ep 15-18 --sub ## 只下載15到18集
+python Linetv.py --dramaid 12102 --ep 15,18 --sub ## 只下載15和17集
 ```
 詳細參數
 |指令|短指令|用途|
