@@ -55,7 +55,10 @@ class DL:
             self.keyType = ''
             self.m3u8 = ''
             self.sub_url = ''
+            self.urlfix = ''
+            self.res = '1080p'
             self.check_ffmpeg()
+            self.get_part_url()
             self.get_m3u8()
             self.get_m3u8_key()
             self.dl_video()
@@ -69,7 +72,7 @@ class DL:
                 print('本項目需要ffmpeg，請手動安裝ffmpeg')
                 raise
 
-        def get_m3u8(self):
+        def get_part_url(self):
             req = session.get(
                 f'https://www.linetv.tw/api/part/{self.dramaid}/eps/{self.ep}/part')
             try:
@@ -84,6 +87,32 @@ class DL:
             if 'subtitle' in parser:
                 self.sub_url = parser['subtitle']
 
+        def get_m3u8(self):
+            self.urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
+            req = session.get(self.m3u8)
+            res = re.findall(r'(\d*\/\d*-eps-\d*_\d*p.m3u8)', req.text)
+            if res:
+                self.res = '1080'
+                m3u8url = f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.m3u8'
+                m3u8 = session.get(m3u8url)
+                m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
+                              f'{self.dramaid}-eps-{self.ep}_1080p.key', m3u8.text)
+                m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
+                              f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8'), 'w') as f:
+                    f.write(m3u8)
+            else:
+                self.res = '480'
+                res = re.findall(r'(\d*-eps-\d*_\d*p_\.m3u8)', req.text)
+                m3u8url = f'{self.urlfix}{self.dramaid}-eps-{self.ep}_480p_.m3u8'
+                m3u8 = session.get(m3u8url)
+                m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
+                              f'{self.dramaid}-eps-{self.ep}_480p.key', m3u8.text)
+                m3u8 = re.sub(r'(\d*-eps-\d*_\d*p_\d*\.ts)',
+                              r'{}\1'.format(self.urlfix), m3u8)
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_480p.m3u8'), 'w') as f:
+                    f.write(m3u8)
+
         def get_m3u8_key(self):
             data = {'keyType': self.keyType, 'keyId': self.keyId,
                     'dramaId': int(self.dramaid), 'eps': int(self.ep)}
@@ -92,27 +121,18 @@ class DL:
             token = req.json()['token']
             key = requests.get(
                 'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
-            with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.key'), 'wb') as f:
+            with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.key'), 'wb') as f:
                 f.write(key.content)
 
         def dl_video(self):
-            urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
-            m3u8url = f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.m3u8'
-            m3u8 = session.get(m3u8url)
-            m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
-                          f'{self.dramaid}-eps-{self.ep}_1080p.key', m3u8.text)
-            m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
-                          f'{urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
-            with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8'), 'w') as f:
-                f.write(m3u8)
-
             if self.no_download:
                 return
 
             print(f'正在下載：{self.dramaname} 第{self.ep}集')
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
-            ffmpeg_cmd = ['ffmpeg', '-allowed_extensions', 'ALL',
-                          '-protocol_whitelist', 'http,https,tls,rtp,tcp,udp,crypto,httpproxy,file', '-y', '-i', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8', '-movflags', '+faststart', '-c', 'copy']
+            ffmpeg_cmd = ['ffmpeg', '-loglevel', 'quiet', '-stats', '-allowed_extensions', 'ALL',
+                          '-protocol_whitelist', 'http,https,tls,rtp,tcp,udp,crypto,httpproxy,file', '-y', '-i', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8', '-movflags', '+faststart', '-c', 'copy']
+
             if self.lng:
                 ffmpeg_cmd.extend(['-metadata:s:a:0', f'language={self.lng}'])
             ffmpeg_cmd.extend([output])
@@ -129,13 +149,13 @@ class DL:
                 sub = session.get(self.sub_url)
                 if sub.status_code != 200:
                     sub = session.get(
-                        f'{urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
                 print('正在下載字幕')
+                        f'{self.urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                     f.write(sub.text)
 
-            os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.m3u8')
-            os.remove(f'{self.dramaid}-eps-{self.ep}_1080p.key')
+            os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8')
+            os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.key')
 
     class Behind():
         def __init__(self, url: str, filename: str):
