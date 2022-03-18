@@ -29,8 +29,9 @@ class Parser():
     def get_eps(self):
         self.eps = []
         parser = etree.HTML(self.html.text)
-        for _ in parser.xpath('//li/a/h3'):
-            self.eps += re.findall(r'(\d+)', _.text)
+        data = json.loads(parser.xpath('//head/script')[0].text[27:])
+        for _ in data['entities']['dramaInfo']['byId'][self.dramaid]['eps_info']:
+            self.eps.append(_['number'])
 
     def get_behind(self):
         self.behind = {}
