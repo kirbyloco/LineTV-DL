@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 import subprocess
@@ -9,14 +10,6 @@ from lxml import etree
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
 session = requests.Session()
 session.headers.update({'User-Agent': UA})
-
-try:
-    with open('config.json') as f:
-        config = json.load(f)
-    if config['access_token']:
-        session.headers.update({'authorization': config['access_token']})
-except:
-    print('找不到config.json，將採用未登入模式下載')
 
 
 class Parser():
@@ -67,9 +60,9 @@ class DL:
         def check_ffmpeg(self):
             try:
                 subprocess.Popen(
-                    'ffmpeg -h', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    'ffmpeg -h', shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except FileNotFoundError:
-                print('本項目需要ffmpeg，請手動安裝ffmpeg')
+                logging.info('本項目需要ffmpeg，請手動安裝ffmpeg')
                 raise
 
         def get_part_url(self):
@@ -78,7 +71,7 @@ class DL:
             try:
                 parser = req.json()['epsInfo']['source'][0]['links'][0]
             except KeyError:
-                print(req.json()['message'])
+                logging.info(req.json()['message'])
                 return
             self.dramaname = req.json()['dramaInfo']['name']
             self.keyId = parser['keyId']
@@ -128,7 +121,7 @@ class DL:
             if self.no_download:
                 return
 
-            print(f'正在下載：{self.dramaname} 第{self.ep}集')
+            logging.info(f'正在下載：{self.dramaname} 第{self.ep}集')
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
             ffmpeg_cmd = ['ffmpeg', '-loglevel', 'quiet', '-stats', '-allowed_extensions', 'ALL',
                           '-protocol_whitelist', 'http,https,tls,rtp,tcp,udp,crypto,httpproxy,file', '-y', '-i', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8', '-movflags', '+faststart', '-c', 'copy']
@@ -136,19 +129,18 @@ class DL:
             if self.lng:
                 ffmpeg_cmd.extend(['-metadata:s:a:0', f'language={self.lng}'])
             ffmpeg_cmd.extend([output])
-            subprocess.Popen(
-                ffmpeg_cmd, shell=False, stderr=subprocess.PIPE).communicate()
+            subprocess.Popen(ffmpeg_cmd).communicate()
 
             if not os.path.exists(output):
-                print('下載失敗')
+                logging.info('下載失敗')
                 return
             else:
-                print('下載完成')
+                logging.info('下載完成')
 
             if self.sub_url and self.subtitle:
                 sub = session.get(self.sub_url)
                 if sub.status_code != 200:
-                    print('正在下載字幕')
+                    logging.info('正在下載字幕')
                     sub = session.get(
                         f'{self.urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
@@ -159,7 +151,7 @@ class DL:
 
     class Behind():
         def __init__(self, url: str, filename: str):
-            print(f'正在下載{filename}')
+            logging.info(f'正在下載{filename}')
             video = session.get(url)
             videoname = filename + url.split('/')[-1][-4:]
 
@@ -167,9 +159,9 @@ class DL:
                 f.write(video.content)
 
             if not os.path.exists(videoname):
-                print('下載失敗')
+                logging.info('下載失敗')
             else:
-                print('下載成功')
+                logging.info('下載成功')
 
 
 if __name__ == '__main__':
@@ -185,7 +177,22 @@ if __name__ == '__main__':
     parser.add_argument('--lng', help='輸入音軌語言')
     parser.add_argument('--no_download', help='僅下載m3u8和key',
                         action="store_true")
+    parser.add_argument('--debug', help='除錯模式', action="store_true")
     args = parser.parse_args()
+
+    if args.debug:
+        logging.basicConfig(format='%(message)s', level=logging.DEBUG, handlers=[
+                            logging.StreamHandler()])
+    else:
+        logging.basicConfig(format='%(message)s', level=logging.INFO)
+
+    try:
+        with open('config.json') as f:
+            config = json.load(f)
+        if config['access_token']:
+            session.headers.update({'authorization': config['access_token']})
+    except:
+        logging.info('找不到config.json，將採用未登入模式下載')
 
     if args.dramaid and args.special:
         sps = Parser(args.dramaid).behind

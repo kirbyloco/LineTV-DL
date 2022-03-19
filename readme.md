@@ -42,6 +42,7 @@ python Linetv.py --dramaid 12102 --ep 15,18 --sub ## 只下載15和17集
 |--sub||開啟字幕下載|
 |--lng||輸入音軌語言（輸入ISO 639-2標準代碼）|
 |--no_download||僅下載m3u8和key|
+|--debug||除錯模式|
 
 ## 開發者模式
 ```
