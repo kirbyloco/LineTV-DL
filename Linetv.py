@@ -148,8 +148,8 @@ class DL:
             if self.sub_url and self.subtitle:
                 sub = session.get(self.sub_url)
                 if sub.status_code != 200:
+                    print('正在下載字幕')
                     sub = session.get(
-                print('正在下載字幕')
                         f'{self.urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                     f.write(sub.text)
