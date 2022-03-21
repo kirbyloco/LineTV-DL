@@ -82,6 +82,8 @@ class DL:
 
         def get_m3u8(self):
             self.urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
+            self.dramaid, self.ep = re.findall(
+                r'(\d*)\/(\d*)\/v\d', self.urlfix)[0]
             req = session.get(self.m3u8)
             res = re.findall(r'(\d*\/\d*-eps-\d*_\d*p.m3u8)', req.text)
             if res:
