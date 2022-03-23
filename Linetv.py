@@ -4,11 +4,11 @@ import os
 import re
 import subprocess
 
-import requests
+import httpx
 from lxml import etree
 
 UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
-session = requests.Session()
+session = httpx.Client()
 session.headers.update({'User-Agent': UA})
 
 
@@ -114,7 +114,7 @@ class DL:
             req = session.post(
                 'https://www.linetv.tw/api/part/dinosaurKeeper', json=data)
             token = req.json()['token']
-            key = requests.get(
+            key = httpx.get(
                 'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
             with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.key'), 'wb') as f:
                 f.write(key.content)
