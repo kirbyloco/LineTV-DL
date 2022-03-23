@@ -8,6 +8,7 @@
 免登入、免VIP直接下載1080p
 
 （若影片是VIP會員限定的，需要登入帳號才可以下載）
+
 （若影片本身無1080p，將自動下載480p版本）
 
 CC字幕自動抓取（可開關）
@@ -23,6 +24,10 @@ CC字幕自動抓取（可開關）
 ![]('https://raw.githubusercontent.com/kirbyloco/LineTV-DL/master/img/cookies.png')
 
 ## 使用者模式
+請先安裝相關套件
+```
+pip install -r requirements.txt
+```
 直接輸入以下指令即可開始下載
 ```
 python Linetv.py --dramaid <Dramaid> --ep <集數> --sub
