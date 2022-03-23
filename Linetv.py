@@ -71,7 +71,7 @@ class DL:
             try:
                 parser = req.json()['epsInfo']['source'][0]['links'][0]
             except KeyError:
-                logging.info(req.json()['message'])
+                logging.warning(req.json()['message'])
                 return
             self.dramaname = req.json()['dramaInfo']['name']
             self.keyId = parser['keyId']
@@ -79,6 +79,7 @@ class DL:
             self.m3u8 = parser['link']
             if 'subtitle' in parser:
                 self.sub_url = parser['subtitle']
+            logging.debug('抓取Drama資料成功')
 
         def get_m3u8(self):
             self.urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
@@ -131,6 +132,7 @@ class DL:
             if self.lng:
                 ffmpeg_cmd.extend(['-metadata:s:a:0', f'language={self.lng}'])
             ffmpeg_cmd.extend([output])
+            logging.info('正在合併檔案')
             subprocess.Popen(ffmpeg_cmd).communicate()
 
             if not os.path.exists(output):
@@ -193,6 +195,7 @@ if __name__ == '__main__':
             config = json.load(f)
         if config['access_token']:
             session.headers.update({'authorization': config['access_token']})
+            logging.info('找到access_token，將採用登入模式下載')
     except:
         logging.info('找不到config.json，將採用未登入模式下載')
 
