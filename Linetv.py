@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 
+import rich.progress
 import httpx
 from lxml import etree
 
@@ -49,6 +50,7 @@ class DL:
             self.m3u8 = ''
             self.sub_url = ''
             self.urlfix = ''
+            self.video_url = []
             self.res = '1080p'
             self.check_ffmpeg()
             self.get_part_url()
@@ -93,8 +95,10 @@ class DL:
                 m3u8 = session.get(m3u8url)
                 m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
                               f'{self.dramaid}-eps-{self.ep}_1080p.key', m3u8.text)
-                m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
-                              f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
+                # m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
+                #               f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
+                self.video_url.append(
+                    f'{self.urlfix}1080/' + re.findall(r"(.*\.ts)", m3u8)[0])
                 with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8'), 'w') as f:
                     f.write(m3u8)
             else:
@@ -104,8 +108,10 @@ class DL:
                 m3u8 = session.get(m3u8url)
                 m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
                               f'{self.dramaid}-eps-{self.ep}_480p.key', m3u8.text)
-                m3u8 = re.sub(r'(\d*-eps-\d*_\d*p_\d*\.ts)',
-                              r'{}\1'.format(self.urlfix), m3u8)
+                # m3u8 = re.sub(r'(\d*-eps-\d*_\d*p_\d*\.ts)',
+                #               r'{}\1'.format(self.urlfix), m3u8)
+                for _ in re.findall(r'(\d*-eps-\d*_\d*p_\d*\.ts)', m3u8):
+                    self.video_url.append(f'{self.urlfix}{_}')
                 with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_480p.m3u8'), 'w') as f:
                     f.write(m3u8)
 
@@ -125,6 +131,24 @@ class DL:
                 return
 
             logging.info(f'正在下載：{self.dramaname} 第{self.ep}集')
+            for _url in self.video_url:
+                with open(os.path.basename(_url), 'ab') as download_file:
+                    with httpx.stream("GET", _url) as response:
+                        total = int(response.headers["Content-Length"])
+
+                        with rich.progress.Progress(
+                            "[progress.percentage]{task.percentage:>3.1f}%",
+                            rich.progress.BarColumn(bar_width=50),
+                            rich.progress.DownloadColumn(),
+                            rich.progress.TransferSpeedColumn(),
+                        ) as progress:
+                            download_task = progress.add_task(
+                                "Download", total=total)
+                            for chunk in response.iter_bytes():
+                                download_file.write(chunk)
+                                progress.update(
+                                    download_task, completed=response.num_bytes_downloaded)
+
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
             ffmpeg_cmd = ['ffmpeg', '-loglevel', 'quiet', '-stats', '-allowed_extensions', 'ALL',
                           '-protocol_whitelist', 'http,https,tls,rtp,tcp,udp,crypto,httpproxy,file', '-y', '-i', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8', '-movflags', '+faststart', '-c', 'copy']
@@ -150,6 +174,8 @@ class DL:
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                     f.write(sub.text)
 
+            for _ in self.video_url:
+                os.remove(os.path.basename(_))
             os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8')
             os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.key')
 
