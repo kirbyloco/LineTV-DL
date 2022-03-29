@@ -44,6 +44,7 @@ class DL:
             self.ep = ep
             self.lng = lng
             self.no_download = no_download
+            self.new_old = True
             self.dramaname = ''
             self.keyId = ''
             self.keyType = ''
@@ -51,7 +52,6 @@ class DL:
             self.sub_url = ''
             self.urlfix = ''
             self.video_url = []
-            self.res = '1080p'
             self.check_ffmpeg()
             self.get_part_url()
             self.get_m3u8()
@@ -84,35 +84,38 @@ class DL:
             logging.debug('抓取Drama資料成功')
 
         def get_m3u8(self):
-            self.urlfix = re.findall(r'(.*\/)\d+.*\d', self.m3u8)[0]
+            self.urlfix = re.findall(r'(.*\/)\d+.*', self.m3u8)[0]
             self.dramaid, self.ep = re.findall(
                 r'(\d*)\/(\d*)\/v\d', self.urlfix)[0]
             req = session.get(self.m3u8)
-            res = re.findall(r'(\d*\/\d*-eps-\d*_\d*p.m3u8)', req.text)
-            if res:
-                self.res = '1080'
-                m3u8url = f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.m3u8'
+            try:
+                url, self.res = re.findall(
+                    r'((\d*)\/\d*-eps-\d*_\d*p\.m3u8.*)', req.text)[-1]
+                self.new_old = True
+            except IndexError:
+                url, self.res = re.findall(
+                    r'(\d*-eps-\d*_(\d*)p.\.m3u8.*)', req.text)[-1]
+                self.new_old = False
+
+            if self.new_old:
+                m3u8url = f'{self.urlfix}{url}'
                 m3u8 = session.get(m3u8url)
                 m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
-                              f'{self.dramaid}-eps-{self.ep}_1080p.key', m3u8.text)
-                # m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_1080p.ts',
-                #               f'{self.urlfix}1080/{self.dramaid}-eps-{self.ep}_1080p.ts', m3u8)
+                              f'{self.dramaid}-eps-{self.ep}_{self.res}p.key', m3u8.text)
                 self.video_url.append(
-                    f'{self.urlfix}1080/' + re.findall(r"(.*\.ts)", m3u8)[0])
-                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_1080p.m3u8'), 'w') as f:
+                    f'{self.urlfix}{self.res}/' + re.findall(r"(.*\.ts.*)", m3u8)[0])
+                m3u8 = re.sub(r'\?.*', '', m3u8)
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8'), 'w') as f:
                     f.write(m3u8)
             else:
-                self.res = '480'
                 res = re.findall(r'(\d*-eps-\d*_\d*p_\.m3u8)', req.text)
-                m3u8url = f'{self.urlfix}{self.dramaid}-eps-{self.ep}_480p_.m3u8'
+                m3u8url = f'{self.urlfix}{self.dramaid}-eps-{self.ep}_{self.res}p_.m3u8'
                 m3u8 = session.get(m3u8url)
                 m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
-                              f'{self.dramaid}-eps-{self.ep}_480p.key', m3u8.text)
-                # m3u8 = re.sub(r'(\d*-eps-\d*_\d*p_\d*\.ts)',
-                #               r'{}\1'.format(self.urlfix), m3u8)
+                              f'{self.dramaid}-eps-{self.ep}_{self.res}p.key', m3u8.text)
                 for _ in re.findall(r'(\d*-eps-\d*_\d*p_\d*\.ts)', m3u8):
                     self.video_url.append(f'{self.urlfix}{_}')
-                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_480p.m3u8'), 'w') as f:
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8'), 'w') as f:
                     f.write(m3u8)
 
         def get_m3u8_key(self):
@@ -130,9 +133,9 @@ class DL:
             if self.no_download:
                 return
 
-            logging.info(f'正在下載：{self.dramaname} 第{self.ep}集')
+            logging.info(f'正在下載：{self.dramaname} 第{self.ep}集 {self.res}P')
             for _url in self.video_url:
-                with open(os.path.basename(_url), 'ab') as download_file:
+                with open(os.path.basename(_url.split('?')[0]), 'ab') as download_file:
                     with httpx.stream("GET", _url) as response:
                         total = int(response.headers["Content-Length"])
 
@@ -174,8 +177,10 @@ class DL:
                 with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
                     f.write(sub.text)
 
+            # subprocess.Popen(
+            #     ['rclone', 'move', output, 'GD:', '-P']).communicate()
             for _ in self.video_url:
-                os.remove(os.path.basename(_))
+                os.remove(os.path.basename(_.split('?')[0]))
             os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8')
             os.remove(f'{self.dramaid}-eps-{self.ep}_{self.res}p.key')
 
