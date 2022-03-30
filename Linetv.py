@@ -16,7 +16,7 @@ session.headers.update({'User-Agent': UA})
 class Parser():
     def __init__(self, dramaid: str):
         self.dramaid = str(dramaid)
-        self.html = session.get(f'https://www.linetv.tw/drama/{self.dramaid}')
+        self.html = session.get(f'https://www.linetv.tw/drama/{self.dramaid}', follow_redirects=True)
         self.get_eps()
         self.get_behind()
 
