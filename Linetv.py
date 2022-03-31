@@ -134,23 +134,42 @@ class DL:
                 return
 
             logging.info(f'正在下載：{self.dramaname} 第{self.ep}集 {self.res}P')
-            for _url in self.video_url:
-                with open(os.path.basename(_url.split('?')[0]), 'ab') as download_file:
-                    with httpx.stream("GET", _url) as response:
-                        total = int(response.headers["Content-Length"])
 
-                        with rich.progress.Progress(
-                            "[progress.percentage]{task.percentage:>3.1f}%",
-                            rich.progress.BarColumn(bar_width=50),
-                            rich.progress.DownloadColumn(),
-                            rich.progress.TransferSpeedColumn(),
-                        ) as progress:
-                            download_task = progress.add_task(
-                                "Download", total=total)
-                            for chunk in response.iter_bytes():
-                                download_file.write(chunk)
-                                progress.update(
-                                    download_task, completed=response.num_bytes_downloaded)
+            if self.new_old:
+                for _url in self.video_url:
+                    with open(os.path.basename(_url.split('?')[0]), 'ab') as download_file:
+                        with httpx.stream("GET", _url) as response:
+                            total = int(response.headers["Content-Length"])
+
+                            with rich.progress.Progress(
+                                "[progress.percentage]{task.percentage:>3.1f}%",
+                                rich.progress.BarColumn(bar_width=50),
+                                rich.progress.DownloadColumn(),
+                                rich.progress.TransferSpeedColumn(),
+                            ) as progress:
+                                download_task = progress.add_task(
+                                    "Download", total=total)
+                                for chunk in response.iter_bytes():
+                                    download_file.write(chunk)
+                                    progress.update(
+                                        download_task, completed=response.num_bytes_downloaded)
+            else:
+                with rich.progress.Progress(
+                    "[progress.percentage]{task.percentage:>3.1f}%",
+                    rich.progress.BarColumn(),
+                    "{task.completed}/{task.total}"
+                ) as progress:
+                    download_task = progress.add_task(
+                        "Download", total=len(self.video_url))
+                    completed = 0
+                    for _url in self.video_url:
+                        with open(os.path.basename(_url.split('?')[0]), 'wb') as download_file:
+                            with httpx.stream("GET", _url) as response:
+                                for chunk in response.iter_bytes():
+                                    download_file.write(chunk)
+                        completed += 1
+                        progress.update(
+                            download_task, completed=completed)
 
             output = os.path.join('.', f'{self.dramaname}-E{self.ep}.mp4')
             ffmpeg_cmd = ['ffmpeg', '-loglevel', 'quiet', '-stats', '-allowed_extensions', 'ALL',
