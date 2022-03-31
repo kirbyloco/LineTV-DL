@@ -206,11 +206,24 @@ class DL:
     class Behind():
         def __init__(self, url: str, filename: str):
             logging.info(f'正在下載{filename}')
-            video = session.get(url)
             videoname = filename + url.split('/')[-1][-4:]
 
-            with open(videoname, 'wb') as f:
-                f.write(video.content)
+            with open(videoname, 'ab') as download_file:
+                with httpx.stream("GET", url) as response:
+                    total = int(response.headers["Content-Length"])
+
+                    with rich.progress.Progress(
+                        "[progress.percentage]{task.percentage:>3.1f}%",
+                        rich.progress.BarColumn(bar_width=50),
+                        rich.progress.DownloadColumn(),
+                        rich.progress.TransferSpeedColumn(),
+                    ) as progress:
+                        download_task = progress.add_task(
+                            "Download", total=total)
+                        for chunk in response.iter_bytes():
+                            download_file.write(chunk)
+                            progress.update(
+                                download_task, completed=response.num_bytes_downloaded)
 
             if not os.path.exists(videoname):
                 logging.info('下載失敗')
