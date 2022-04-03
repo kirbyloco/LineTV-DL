@@ -4,12 +4,14 @@
 # 注意
 本下載工具需要ffmpeg，請事先將ffmpeg放入系統PATH或放在資料夾裡
 
+[FFmpeg下載點我](https://ffmpeg.org/download.html)
+
+若影片是VIP會員限定的，需要登入帳號才可以下載
+
 # 特色
-~~免登入、免VIP直接下載1080p~~ （已於2022/03/29失效）
+~~免登入、免VIP直接下載1080p~~ （已於2022/03/29失效）（有方法應對但估計不會公開）
 
-（若影片是VIP會員限定的，需要登入帳號才可以下載）
-
-（若影片本身無1080p，將自動下載480p版本）
+自動下載最高畫質
 
 CC字幕自動抓取（可開關）
 
@@ -21,7 +23,7 @@ CC字幕自動抓取（可開關）
 2. 從cookies提取access_token
 3. 複製到config.json裡
 ```
-![]('https://raw.githubusercontent.com/kirbyloco/LineTV-DL/master/img/cookies.png')
+![](https://raw.githubusercontent.com/kirbyloco/LineTV-DL/master/img/cookies.png)
 
 ## 使用者模式
 請先安裝相關套件
@@ -35,7 +37,7 @@ python Linetv.py --dramaid <Dramaid> --ep <集數> --sub
 python Linetv.py --dramaid 12102 --ep 1 --sub ## 下載第一集
 python Linetv.py --dramaid 12102 --epall --sub ## 下載全部集數
 python Linetv.py --dramaid 12102 --ep 15-18 --sub ## 只下載15到18集
-python Linetv.py --dramaid 12102 --ep 15,18 --sub ## 只下載15和17集
+python Linetv.py --dramaid 12102 --ep 15,18 --sub ## 只下載15和18集
 ```
 詳細參數
 |指令|短指令|用途|
