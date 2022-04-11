@@ -16,7 +16,8 @@ session.headers.update({'User-Agent': UA})
 class Parser():
     def __init__(self, dramaid: str):
         self.dramaid = str(dramaid)
-        self.html = session.get(f'https://www.linetv.tw/drama/{self.dramaid}', follow_redirects=True)
+        self.html = session.get(
+            f'https://www.linetv.tw/drama/{self.dramaid}', follow_redirects=True)
         self.get_eps()
         self.get_behind()
 
@@ -105,16 +106,21 @@ class DL:
                 self.video_url.append(
                     f'{self.urlfix}{self.res}/' + re.findall(r"(.*\.ts.*)", m3u8)[0])
                 m3u8 = re.sub(r'\?.*', '', m3u8)
+                if self.no_download:
+                    m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_{self.res}p.ts',
+                                  f'{self.urlfix}{self.res}/{self.dramaid}-eps-{self.ep}_{self.res}p.ts', m3u8)
                 with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8'), 'w') as f:
                     f.write(m3u8)
             else:
-                res = re.findall(r'(\d*-eps-\d*_\d*p_\.m3u8)', req.text)
                 m3u8url = f'{self.urlfix}{self.dramaid}-eps-{self.ep}_{self.res}p_.m3u8'
                 m3u8 = session.get(m3u8url)
                 m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
                               f'{self.dramaid}-eps-{self.ep}_{self.res}p.key', m3u8.text)
                 for _ in re.findall(r'(\d*-eps-\d*_\d*p_\d*\.ts)', m3u8):
                     self.video_url.append(f'{self.urlfix}{_}')
+                if self.no_download:
+                    m3u8 = re.sub(r'(\d*-eps-\d*_\d*p_\d*\.ts)',
+                                  r'{}\1'.format(self.urlfix), m3u8)
                 with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8'), 'w') as f:
                     f.write(m3u8)
 
