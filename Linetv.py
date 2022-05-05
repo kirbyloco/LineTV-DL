@@ -52,6 +52,7 @@ class DL:
             self.m3u8 = ''
             self.sub_url = ''
             self.urlfix = ''
+            self.drama_key = ''
             self.video_url = []
             self.check_ffmpeg()
             self.get_part_url()
@@ -101,20 +102,23 @@ class DL:
             if self.new_old:
                 m3u8url = f'{self.urlfix}{url}'
                 m3u8 = session.get(m3u8url)
-                m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
+                self.drama_key = re.findall(r'URI=\"(.*)\"', m3u8.text)[0]
+                m3u8 = re.sub(self.drama_key,
                               f'{self.dramaid}-eps-{self.ep}_{self.res}p.key', m3u8.text)
                 self.video_url.append(
                     f'{self.urlfix}{self.res}/' + re.findall(r"(.*\.ts.*)", m3u8)[0])
-                m3u8 = re.sub(r'\?.*', '', m3u8)
                 if self.no_download:
                     m3u8 = re.sub(f'{self.dramaid}-eps-{self.ep}_{self.res}p.ts',
                                   f'{self.urlfix}{self.res}/{self.dramaid}-eps-{self.ep}_{self.res}p.ts', m3u8)
+                else:
+                    m3u8 = re.sub(r'\?.*', '', m3u8)
                 with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.m3u8'), 'w') as f:
                     f.write(m3u8)
             else:
                 m3u8url = f'{self.urlfix}{self.dramaid}-eps-{self.ep}_{self.res}p_.m3u8'
                 m3u8 = session.get(m3u8url)
-                m3u8 = re.sub(r'https://keydeliver.linetv.tw/jurassicPark',
+                self.drama_key = re.findall(r'URI=\"(.*)\"', m3u8.text)[0]
+                m3u8 = re.sub(self.drama_key,
                               f'{self.dramaid}-eps-{self.ep}_{self.res}p.key', m3u8.text)
                 for _ in re.findall(r'(\d*-eps-\d*_\d*p_\d*\.ts)', m3u8):
                     self.video_url.append(f'{self.urlfix}{_}')
@@ -125,15 +129,20 @@ class DL:
                     f.write(m3u8)
 
         def get_m3u8_key(self):
-            data = {'keyType': self.keyType, 'keyId': self.keyId,
-                    'dramaId': int(self.dramaid), 'eps': int(self.ep)}
-            req = session.post(
-                'https://www.linetv.tw/api/part/dinosaurKeeper', json=data)
-            token = req.json()['token']
-            key = httpx.get(
-                'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
-            with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.key'), 'wb') as f:
-                f.write(key.content)
+            if self.new_old:
+                key = session.get(self.drama_key)
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.key'), 'wb') as f:
+                    f.write(key.content)
+            else:
+                data = {'keyType': self.keyType, 'keyId': self.keyId,
+                        'dramaId': int(self.dramaid), 'eps': int(self.ep)}
+                req = session.post(
+                    'https://www.linetv.tw/api/part/dinosaurKeeper', json=data)
+                token = req.json()['token']
+                key = httpx.get(
+                    'https://keydeliver.linetv.tw/jurassicPark', headers={'authentication': token})
+                with open(os.path.join('.', f'{self.dramaid}-eps-{self.ep}_{self.res}p.key'), 'wb') as f:
+                    f.write(key.content)
 
         def dl_video(self):
             if self.no_download:
