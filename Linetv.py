@@ -208,8 +208,11 @@ class DL:
                     logging.info('正在下載字幕')
                     sub = session.get(
                         f'{self.urlfix}caption/{self.dramaid}-eps-{self.ep}.vtt')
-                with open(f'{self.dramaname}-E{self.ep}.vtt', 'w', encoding='utf-8') as f:
-                    f.write(sub.text)
+                with open(f'{self.dramaname}-E{self.ep}.vtt', 'wb') as f:
+                    f.write(sub.content)
+                vtt_to_srt = [
+                    'ffmpeg', '-hide_banner', '-i', f'{self.dramaname}-E{self.ep}.vtt', f'{self.dramaname}-E{self.ep}.srt']
+                subprocess.run(vtt_to_srt)
 
             # subprocess.Popen(
             #     ['rclone', 'move', output, 'GD:', '-P']).communicate()
