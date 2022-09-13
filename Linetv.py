@@ -64,7 +64,7 @@ class DL:
         def check_ffmpeg(self):
             try:
                 subprocess.Popen(
-                    'ffmpeg -h', shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    'ffmpeg -h', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             except FileNotFoundError:
                 logging.info('本項目需要ffmpeg，請手動安裝ffmpeg')
                 raise
